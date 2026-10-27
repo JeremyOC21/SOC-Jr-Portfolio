@@ -40,37 +40,38 @@ determine whether it succeeded, and recommend containment.
 6. Harden the endpoint (enable account lockout policy).
 7. Re-run the attack and verify the defense works.
 
-## 5. Evidence
+## 5. Detection and investigation
 
-| File | Description |
-|---|---|
-| `01-nmap-recon.png` | Port scan confirming RDP (3389) exposed |
-| `02-bruteforce-alerts.png` | Wazuh alerts for failed logons (rule 60122) |
-| `03-correlation-alert.png` | Correlated brute-force alert (rule 60204, level 10) |
-| `04-alert-detail.png` | Alert detail: source IP, target user, logon type |
-| `05-no-successful-login.png` | Query confirming no successful logon (0 hits) |
-| `06-sca-lockout-failed.png` | CIS SCA check 15507 (account lockout) failing |
-| `07-lockout-applied.png` | Account lockout policy enabled on the endpoint |
-| `08-attack-blocked.png` | Second attack stopped after 5 attempts |
+**Reconnaissance.** An `nmap -sV` scan from the attacker revealed only
+TCP **3389 (RDP)** open on the victim; the Windows firewall filtered the
+other 999 scanned ports.
 
-![RDP brute-force alerts in Wazuh](../evidence/02-bruteforce-alerts.png)
+![Nmap scan showing only RDP exposed](./01-nmap-recon.png)
 
-## 6. Findings
+**Attack.** Hydra generated 50+ login attempts against user `user` over
+RDP in roughly two minutes, using a common-password list.
 
-- **Reconnaissance:** An `nmap -sV` scan from the attacker revealed only
-  TCP **3389 (RDP)** open on the victim; the Windows firewall filtered
-  the other 999 scanned ports.
-- **Attack:** Hydra generated 50+ login attempts against user `user` over
-  RDP in roughly two minutes, using a common-password list.
-- **Detection:** Wazuh logged each failed attempt as **rule 60122
-  (Logon Failure, level 5)** and correlated them into **rule 60204
-  (Multiple Windows Logon Failures, level 10)**, mapped to
-  **MITRE ATT&CK T1110 — Brute Force**.
-- **Impact check:** A query for successful logons (rule 60106) after the
-  attack returned **0 results** — the attacker did **not** gain access.
-- **Root cause:** The CIS SCA module showed check **15507 (Account
-  lockout threshold)** in a **Failed** state. The account never locked,
-  which is why the attacker could try 50+ passwords without being stopped.
+![Hydra brute-force running from Kali](./02-attack-hydra.png)
+
+**Detection.** Wazuh logged each failed attempt as **rule 60122 (Logon
+Failure, level 5)** and correlated them into **rule 60204 (Multiple
+Windows Logon Failures, level 10)**, mapped to **MITRE ATT&CK T1110 —
+Brute Force**.
+
+![Failed logon events, rule 60122](./03-bruteforce-alerts.png)
+
+![Correlated brute-force alert, rule 60204](./04-correlation-alert.png)
+
+**Impact check.** A query for successful logons (rule 60106) after the
+attack returned **0 results** — the attacker did **not** gain access.
+
+## 6. Root cause
+
+The CIS SCA module showed check **15507 (Account lockout threshold)** in a
+**Failed** state. The account never locked, which is why the attacker
+could try 50+ passwords without being stopped.
+
+![CIS SCA check 15507 failing](./05-sca-lockout-failed.png)
 
 ## 7. SOC Assessment
 
@@ -99,12 +100,21 @@ compromise and the target is an internal lab host.
 ## 9. Verification
 
 After enabling the account lockout policy (threshold = 5), the attack was
-repeated. This time Hydra was stopped after ~5 attempts: the account
-locked, RDP began rejecting connections, and Hydra aborted with
-connection errors (`all children were disabled due to too many
-connection errors`). The Wazuh timeline clearly shows a large spike of
-failed logons during the first attack and a much smaller one during the
-second — visual proof the hardening worked.
+repeated.
+
+![Account lockout policy enabled](./06-lockout-applied.png)
+
+This time Hydra was stopped after ~5 attempts: the account locked, RDP
+began rejecting connections, and Hydra aborted with connection errors
+(`all children were disabled due to too many connection errors`).
+
+![Second attack aborted by the lockout](./07-attack-blocked.png)
+
+The Wazuh timeline clearly shows a large spike of failed logons during
+the first attack and a much smaller one during the second — visual proof
+the hardening worked.
+
+![Timeline: first attack vs. second attack](./08-attack-comparison.png)
 
 ## 10. Limitations
 
