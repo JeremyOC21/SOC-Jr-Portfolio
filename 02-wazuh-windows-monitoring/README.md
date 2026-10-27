@@ -44,6 +44,10 @@ whether it is a real threat or benign activity — a core L1 skill.
 - **Log validation:** confirmed Sysmon events arriving in Threat Hunting,
   mapped to MITRE ATT&CK.
 
+![Wazuh agent active](./01-agent-active.png)
+
+![Sysmon service running on the endpoint](./02-sysmon-running.png)
+
 ## 6. Investigation example — false-positive analysis
 
 An alert fired: **rule 92201 (PowerShell created a script in Windows
@@ -55,6 +59,8 @@ process was traced to `secedit /export`, executed from
 `C:\Program Files (x86)\ossec-agent\`. This revealed the activity was the
 **Wazuh agent's own Configuration Assessment (SCA) module** checking the
 system's password policy — not an attacker.
+
+![Process pivot confirming the Wazuh agent as the source](./03-falsepositive-detail.png)
 
 **Conclusion:** False positive. Recommended tuning to exclude this
 pattern.
@@ -74,24 +80,14 @@ where. Classifying by context, not by the command alone, is the key skill.
 - A SIEM only stores events that match a rule; some raw events must be
   retrieved directly from the endpoint when no rule captured them.
 
-## 8. Evidence
-
-| File | Description |
-|---|---|
-| `10-agent-active.png` | Wazuh agent registered and active |
-| `11-sysmon-running.png` | Sysmon service running on the endpoint |
-| `12-falsepositive-detail.png` | Alert 92201 detail and pivot result |
-
-![Wazuh agent active](../evidence/10-agent-active.png)
-
-## 9. Lessons Learned
+## 8. Lessons Learned
 
 - Pivoting on a unique identifier (ProcessGuid) is how you connect
   separate events into one story.
 - Not every high-severity alert is a real incident — and not every real
   incident is high severity.
 
-## 10. References
+## 9. References
 
 - Wazuh documentation — https://documentation.wazuh.com/
 - Sysmon (Sysinternals) — https://learn.microsoft.com/sysinternals/downloads/sysmon
