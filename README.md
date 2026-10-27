@@ -58,7 +58,7 @@ re-running the attack.
 [View project](./04-incident-response/README.md)
 
 ### 05. SOC Playbooks
-**Status: Planned**
+**Status: Completed**
 
 Repeatable procedures for alert triage, evidence collection,
 escalation, and reporting.
