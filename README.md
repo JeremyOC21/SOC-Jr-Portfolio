@@ -40,7 +40,7 @@ real threats (including false-positive analysis via process pivoting).
 [View project](./02-wazuh-windows-monitoring/README.md)
 
 ### 03. Firewall and Network Analysis
-**Status: Planned**
+**Status: Completed**
 
 Reviewing pfSense firewall rules and logs, and correlating network
 traffic (IPs, ports, protocols) with security events.
